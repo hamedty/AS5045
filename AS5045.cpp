@@ -52,12 +52,13 @@
 
 #include "AS5045.h"
 
-AS5045::AS5045 (byte pinCS, byte pinCLK, byte pinDO, byte pinPROG) 
+AS5045::AS5045 (byte pinCS, byte pinCLK, byte pinDO, byte pinPROG, unsigned int clockDelay)
 {
   _pinCS   = pinCS ;
   _pinCLK  = pinCLK ;
   _pinDO   = pinDO ;
   _pinPROG = pinPROG ;
+  _clockDelay = clockDelay ;
 
   _status  = 0xFF ;  // invalid status
 }
@@ -184,6 +185,20 @@ boolean AS5045::init ()
   
 }
 
+void AS5045::clock_delay ()
+{
+  if (_clockDelay)
+    delayMicroseconds (_clockDelay) ;
+}
+
+void AS5045::clock_cycle ()
+{
+  digitalWrite (_pinCLK, LOW) ;
+  clock_delay () ;
+  digitalWrite (_pinCLK, HIGH) ;
+  clock_delay () ;
+}
+
 // read position value, squirrel away status
 unsigned int AS5045::read ()
 {
@@ -191,15 +206,13 @@ unsigned int AS5045::read ()
   unsigned int value = 0 ;
   for (byte i = 0 ; i < 12 ; i++)
   {
-    digitalWrite (_pinCLK, LOW) ;
-    digitalWrite (_pinCLK, HIGH) ;
+    clock_cycle () ;
     value = (value << 1) | digitalRead (_pinDO) ;
   }
   byte status = 0 ;
   for (byte i = 0 ; i < 6 ; i++)
   {
-    digitalWrite (_pinCLK, LOW) ;
-    digitalWrite (_pinCLK, HIGH) ;
+    clock_cycle () ;
     status = (status << 1) | digitalRead (_pinDO) ;
   }
   digitalWrite (_pinCS, HIGH) ;
