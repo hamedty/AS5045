@@ -77,6 +77,9 @@ class AS5045
   boolean init ();
 
   unsigned int read () ;
+#ifdef ESP8266
+  unsigned int read_fast_esp8266 () ;
+#endif
   unsigned int read_bias () ;
   byte status () ;
   boolean valid () ;

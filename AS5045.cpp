@@ -221,6 +221,61 @@ unsigned int AS5045::read ()
   return value ;
 }
 
+#ifdef ESP8266
+// same as read - optimized for esp8266 - no SPI
+unsigned int AS5045::read_fast_esp8266 ()
+{
+  // digitalWrite (_pinCS, LOW) ;
+  GPOC = (1 << _pinCS);
+  unsigned int value = 0 ;
+  for (byte i = 0 ; i < 12 ; i++)
+  {
+    // clock_cycle () ;
+    GPOC = (1 << _pinCLK);
+    GPOC = (1 << _pinCLK);
+    GPOC = (1 << _pinCLK);
+    GPOC = (1 << _pinCLK);
+    GPOC = (1 << _pinCLK);
+    // delayMicroseconds(1);
+    GPOS = (1 << _pinCLK);
+    GPOS = (1 << _pinCLK);
+    GPOS = (1 << _pinCLK);
+    GPOS = (1 << _pinCLK);
+    GPOS = (1 << _pinCLK);
+    // delayMicroseconds(1);
+
+    // value = (value << 1) | digitalRead (_pinDO) ;
+    value = (value << 1) | GPIP(D6) ;
+  }
+  byte status = 0 ;
+  for (byte i = 0 ; i < 6 ; i++)
+  {
+    // clock_cycle () ;
+    GPOC = (1 << _pinCLK);
+    GPOC = (1 << _pinCLK);
+    GPOC = (1 << _pinCLK);
+    GPOC = (1 << _pinCLK);
+    GPOC = (1 << _pinCLK);
+    // delayMicroseconds(1);
+    GPOS = (1 << _pinCLK);
+    GPOS = (1 << _pinCLK);
+    GPOS = (1 << _pinCLK);
+    GPOS = (1 << _pinCLK);
+    GPOS = (1 << _pinCLK);
+    // delayMicroseconds(1);
+
+    // status = (status << 1) | digitalRead (_pinDO) ;
+    status = (status << 1) | GPIP(D6) ;
+  }
+  // digitalWrite (_pinCS, HIGH) ;
+  GPOS = (1 << _pinCS);
+
+  _parity = even_parity (value >> 2) ^ even_parity (value & 3) ^ even_parity (status) ;
+  _status = status >> 1 ;
+  return value ;
+}
+#endif
+
 // read position value with bias (with 4096/round support only), squirrel away status 
 unsigned int AS5045::read_bias ()
 {
